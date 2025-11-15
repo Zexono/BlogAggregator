@@ -47,3 +47,4 @@ func (cfg *Config) SetUser(name string)  error{
 	
 	return nil
 }
+
