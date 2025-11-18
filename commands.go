@@ -2,20 +2,57 @@ package main
 
 import (
 	"blogagg/internal/config"
+	"blogagg/internal/database"
+	"context"
 	"fmt"
+	"os"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 func handlerLogin(s *state, cmd command) error{
 	if len(cmd.args) == 0{
 		return fmt.Errorf("command empty missing username")
 	}
-	s.ptrconfig.SetUser(cmd.args[0])
+
+	name := cmd.args[0]
+	if _ , err := s.db.GetUser(context.Background(),name); err != nil{
+		
+		os.Exit(1)
+		return fmt.Errorf("username doesn't exist in the database")
+	}
+
+	s.ptrconfig.SetUser(name)
 	fmt.Println("username has been set")
 
 	return nil
 }
 
+func handlerResgister(s *state, cmd command) error{
+	if len(cmd.args) == 0{
+		return fmt.Errorf("command empty missing username arg")
+	}
+	
+	name := cmd.args[0]
+	if _ , err := s.db.GetUser(context.Background(),name); err == nil{
+		
+		os.Exit(1)
+		return fmt.Errorf("user already exists")
+	}
+	s.db.CreateUser(context.Background(),database.CreateUserParams{ID: uuid.New(),CreatedAt: time.Now().Local(),UpdatedAt: time.Now().Local(),Name: name })
+
+	s.ptrconfig.SetUser(name)
+	fmt.Println("user was created")
+
+	user , _ := s.db.GetUser(context.Background(),name)
+	fmt.Printf("created user: %+v\n", user)
+
+	return nil
+}
+
 type state struct {
+	db  *database.Queries
 	ptrconfig *config.Config
 }
 
