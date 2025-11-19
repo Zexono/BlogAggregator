@@ -13,6 +13,7 @@ import (
 
 func handlerLogin(s *state, cmd command) error{
 	if len(cmd.args) == 0{
+		os.Exit(1)
 		return fmt.Errorf("command empty missing username")
 	}
 
@@ -31,6 +32,7 @@ func handlerLogin(s *state, cmd command) error{
 
 func handlerResgister(s *state, cmd command) error{
 	if len(cmd.args) == 0{
+		os.Exit(1)
 		return fmt.Errorf("command empty missing username arg")
 	}
 	
@@ -48,6 +50,20 @@ func handlerResgister(s *state, cmd command) error{
 	user , _ := s.db.GetUser(context.Background(),name)
 	fmt.Printf("created user: %+v\n", user)
 
+	return nil
+}
+
+func reset(s *state, cmd command) error{
+	if len(cmd.args) != 0{
+		return fmt.Errorf("command do not need args")
+	}
+
+	err := s.db.DeleteAllUser(context.Background())
+	if err != nil {
+		os.Exit(1)
+		return err
+	}
+	fmt.Println("All user deleted")
 	return nil
 }
 
@@ -86,3 +102,4 @@ func (c *commands) register(name string, f func(*state, command) error){
     }
 	c.handlers[name] = f
 }
+
