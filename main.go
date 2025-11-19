@@ -32,7 +32,8 @@ func main(){
 	c := commands{make(map[string]func(*state, command) error)}
 	c.register("login",handlerLogin)
 	c.register("register",handlerResgister)
-	c.register("reset",reset)
+	c.register("reset",handlerReset)
+	c.register("users",handlerUsers)
 	input := os.Args
 	//if input[0] != "gator" {
 	//	fmt.Println("plz use gator <command> <args>")

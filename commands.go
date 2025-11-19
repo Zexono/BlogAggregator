@@ -53,8 +53,9 @@ func handlerResgister(s *state, cmd command) error{
 	return nil
 }
 
-func reset(s *state, cmd command) error{
+func handlerReset(s *state, cmd command) error{
 	if len(cmd.args) != 0{
+		os.Exit(1)
 		return fmt.Errorf("command do not need args")
 	}
 
@@ -64,6 +65,30 @@ func reset(s *state, cmd command) error{
 		return err
 	}
 	fmt.Println("All user deleted")
+	return nil
+}
+
+func handlerUsers(s *state, cmd command) error{
+	if len(cmd.args) != 0{
+		os.Exit(1)
+		return fmt.Errorf("command do not need args")
+	}
+
+	users,err := s.db.GetAllUser(context.Background())
+	user_cur := s.ptrconfig.CurrentUserName
+	if err != nil {
+		os.Exit(1)
+		return err
+	}
+	//name := users{}
+	fmt.Println("List all users")
+	for _, v := range users {
+		if v.Name == user_cur {
+			fmt.Printf("%s (current) \n",v.Name)
+		}else{
+			fmt.Printf("%s \n",v.Name)
+		}
+	}
 	return nil
 }
 
