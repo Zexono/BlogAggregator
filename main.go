@@ -34,6 +34,7 @@ func main(){
 	c.register("register",handlerResgister)
 	c.register("reset",handlerReset)
 	c.register("users",handlerUsers)
+	c.register("agg",handlerAgg)
 	input := os.Args
 	//if input[0] != "gator" {
 	//	fmt.Println("plz use gator <command> <args>")

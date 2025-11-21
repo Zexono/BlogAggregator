@@ -4,7 +4,11 @@ import (
 	"blogagg/internal/config"
 	"blogagg/internal/database"
 	"context"
+	"encoding/xml"
 	"fmt"
+	"html"
+	"io"
+	"net/http"
 	"os"
 	"time"
 
@@ -92,6 +96,21 @@ func handlerUsers(s *state, cmd command) error{
 	return nil
 }
 
+func handlerAgg(_ *state, cmd command) error{
+	if len(cmd.args) != 0{
+		os.Exit(1)
+		return fmt.Errorf("command do not need args")
+	}
+	feed , err := fetchFeed(context.Background(),"https://www.wagslane.dev/index.xml")
+	if err != nil {
+		return err
+	}
+	fmt.Println(feed)
+
+
+	return nil
+}
+
 type state struct {
 	db  *database.Queries
 	ptrconfig *config.Config
@@ -128,3 +147,53 @@ func (c *commands) register(name string, f func(*state, command) error){
 	c.handlers[name] = f
 }
 
+type RSSFeed struct {
+	Channel struct {
+		Title       string    `xml:"title"`
+		Link        string    `xml:"link"`
+		Description string    `xml:"description"`
+		Item        []RSSItem `xml:"item"`
+	} `xml:"channel"`
+}
+
+type RSSItem struct {
+	Title       string `xml:"title"`
+	Link        string `xml:"link"`
+	Description string `xml:"description"`
+	PubDate     string `xml:"pubDate"`
+}
+
+
+func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error){
+	req, err := http.NewRequestWithContext(ctx,"GET",feedURL,nil)
+	req.Header.Set("User-Agent", "gator")
+	if err != nil {
+		//fmt.Printf("Error creating request \n")
+		
+        return nil , fmt.Errorf("error creating request %v ",err)
+	}
+	
+	//body, err := io.ReadAll(resp.Body)
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+    if err != nil {
+        //fmt.Printf("Error making request \n")
+        return nil , fmt.Errorf("error making request %v ",err)
+    }
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		//fmt.Printf("Error Reading Body \n")
+        return nil , fmt.Errorf("error Reading Body %v ",err)
+	}
+
+	var feed RSSFeed
+	xml.Unmarshal(body,&feed)
+	feed.Channel.Title = html.UnescapeString(feed.Channel.Title)
+	feed.Channel.Description = html.UnescapeString(feed.Channel.Description)
+
+	
+	return &feed,nil
+}
