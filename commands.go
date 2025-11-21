@@ -9,7 +9,6 @@ import (
 	"html"
 	"io"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,14 +16,12 @@ import (
 
 func handlerLogin(s *state, cmd command) error{
 	if len(cmd.args) == 0{
-		os.Exit(1)
 		return fmt.Errorf("command empty missing username")
 	}
 
 	name := cmd.args[0]
 	if _ , err := s.db.GetUser(context.Background(),name); err != nil{
 		
-		os.Exit(1)
 		return fmt.Errorf("username doesn't exist in the database")
 	}
 
@@ -36,17 +33,19 @@ func handlerLogin(s *state, cmd command) error{
 
 func handlerResgister(s *state, cmd command) error{
 	if len(cmd.args) == 0{
-		os.Exit(1)
 		return fmt.Errorf("command empty missing username arg")
 	}
 	
 	name := cmd.args[0]
 	if _ , err := s.db.GetUser(context.Background(),name); err == nil{
 		
-		os.Exit(1)
 		return fmt.Errorf("user already exists")
 	}
-	s.db.CreateUser(context.Background(),database.CreateUserParams{ID: uuid.New(),CreatedAt: time.Now().Local(),UpdatedAt: time.Now().Local(),Name: name })
+	s.db.CreateUser(context.Background(),database.CreateUserParams{
+		ID: uuid.New(),
+		CreatedAt: time.Now().Local(),
+		UpdatedAt: time.Now().Local(),
+		Name: name })
 
 	s.ptrconfig.SetUser(name)
 	fmt.Println("user was created")
@@ -59,13 +58,11 @@ func handlerResgister(s *state, cmd command) error{
 
 func handlerReset(s *state, cmd command) error{
 	if len(cmd.args) != 0{
-		os.Exit(1)
 		return fmt.Errorf("command do not need args")
 	}
 
 	err := s.db.DeleteAllUser(context.Background())
 	if err != nil {
-		os.Exit(1)
 		return err
 	}
 	fmt.Println("All user deleted")
@@ -74,14 +71,12 @@ func handlerReset(s *state, cmd command) error{
 
 func handlerUsers(s *state, cmd command) error{
 	if len(cmd.args) != 0{
-		os.Exit(1)
 		return fmt.Errorf("command do not need args")
 	}
 
 	users,err := s.db.GetAllUser(context.Background())
 	user_cur := s.ptrconfig.CurrentUserName
 	if err != nil {
-		os.Exit(1)
 		return err
 	}
 	//name := users{}
@@ -98,7 +93,6 @@ func handlerUsers(s *state, cmd command) error{
 
 func handlerAgg(_ *state, cmd command) error{
 	if len(cmd.args) != 0{
-		os.Exit(1)
 		return fmt.Errorf("command do not need args")
 	}
 	feed , err := fetchFeed(context.Background(),"https://www.wagslane.dev/index.xml")
@@ -108,6 +102,44 @@ func handlerAgg(_ *state, cmd command) error{
 	fmt.Println(feed)
 
 
+	return nil
+}
+
+func handlerAddfeed(s *state, cmd command) error{
+	if len(cmd.args) == 0{
+		return fmt.Errorf("command empty missing feed name and url")
+	}
+
+	if len(cmd.args) == 1{
+		return fmt.Errorf("command empty missing url")
+	}
+
+	name := cmd.args[0]
+	url := cmd.args[1]
+	user_cur := s.ptrconfig.CurrentUserName
+
+	user,err := s.db.GetUser(context.Background(),user_cur)
+	if err != nil {
+		return err
+	}
+
+	userid := user.ID
+	
+	
+	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
+    ID:        uuid.New(),
+    CreatedAt: time.Now().UTC(),
+    UpdatedAt: time.Now().UTC(),
+    Name:      name,
+    Url:       url,
+    UserID:    userid,})
+
+	if err != nil {
+    	return err
+	}
+
+	fmt.Printf("created feed: %+v\n", feed)
+	
 	return nil
 }
 
@@ -197,3 +229,5 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error){
 	
 	return &feed,nil
 }
+
+
