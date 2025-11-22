@@ -143,6 +143,28 @@ func handlerAddfeed(s *state, cmd command) error{
 	return nil
 }
 
+func handlerFeeds(s *state, cmd command) error{
+	if len(cmd.args) != 0{
+		return fmt.Errorf("command do not need args")
+	}
+
+	feeds,err := s.db.GetAllFeed(context.Background())
+	
+	if err != nil {
+		return err
+	}
+	
+	fmt.Println("List all feeds")
+	for _, v := range feeds {
+		cur_user_name ,err := s.db.GetUserById(context.Background(),v.UserID)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%s URL: %s Create By: %s \n",v.Name,v.Url,cur_user_name)
+	}
+	return nil
+}
+
 type state struct {
 	db  *database.Queries
 	ptrconfig *config.Config
