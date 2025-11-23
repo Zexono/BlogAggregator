@@ -138,8 +138,23 @@ func handlerAddfeed(s *state, cmd command) error{
     	return err
 	}
 
+
+
 	fmt.Printf("created feed: %+v\n", feed)
-	
+
+	feedfollow, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+	ID:        uuid.New(),
+    CreatedAt: time.Now().UTC(),
+    UpdatedAt: time.Now().UTC(),
+    UserID:	userid,
+	FeedID:	feed.ID})
+
+	if err != nil {
+    	return err
+	}
+
+	fmt.Printf("followed: %+v\n", feedfollow)
+
 	return nil
 }
 
@@ -162,6 +177,76 @@ func handlerFeeds(s *state, cmd command) error{
 		}
 		fmt.Printf("%s URL: %s Create By: %s \n",v.Name,v.Url,cur_user_name)
 	}
+	return nil
+}
+
+func handlerFollow(s *state, cmd command) error{
+	if len(cmd.args) == 0{
+		return fmt.Errorf("command empty missing feed url")
+	}
+
+	url := cmd.args[0]
+
+	user_cur := s.ptrconfig.CurrentUserName
+	user,err := s.db.GetUser(context.Background(),user_cur)
+	if err != nil {
+		println("user error")
+		return err
+	}
+	feed_url ,err:= s.db.GetFeedFromURL(context.Background(),url)
+	if err != nil {
+		println("feed error")
+		return err
+	}
+
+	userid := user.ID
+	feedid := feed_url.ID
+	
+	
+	feedfollow, err  := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+	ID:        uuid.New(),
+    CreatedAt: time.Now().UTC(),
+    UpdatedAt: time.Now().UTC(),
+    UserID:	userid,
+	FeedID:	feedid})
+
+	if err != nil {
+		println("follow error")
+    	return err
+	}
+
+	fmt.Printf("created feed follow: %+v\n", feedfollow)
+	
+	return nil
+}
+
+func handlerFollowing(s *state, cmd command) error{
+	if len(cmd.args) != 0{
+		return fmt.Errorf("command do not need args")
+	}
+
+	user_cur := s.ptrconfig.CurrentUserName
+	user,err := s.db.GetUser(context.Background(),user_cur)
+	if err != nil {
+		return err
+	}
+
+	userid := user.ID
+	feed,err := s.db.GetFeedFollowsForUser(context.Background(),userid)
+
+	if err != nil {
+    	return err
+	}
+
+	for _, v := range feed {
+		feed_name,err := s.db.GetFeedFromID(context.Background(),v.FeedID)
+		if err != nil {
+    	return err
+		}
+		fmt.Printf("Feed: %+v By %s\n", feed_name.Name,user_cur)
+	}
+	//fmt.Printf("Feed: %+v By %s\n", feed,user_cur)
+	
 	return nil
 }
 

@@ -37,6 +37,8 @@ func main(){
 	c.register("agg",handlerAgg)
 	c.register("addfeed",handlerAddfeed)
 	c.register("feeds",handlerFeeds)
+	c.register("follow",handlerFollow)
+	c.register("following",handlerFollowing)
 	input := os.Args
 	//if input[0] != "gator" {
 	//	fmt.Println("plz use gator <command> <args>")
@@ -53,6 +55,7 @@ func main(){
 	cmd := command{name: input[1],args: input[2:]}
 	err = c.run(s,cmd)
 	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
 }
