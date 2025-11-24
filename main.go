@@ -40,19 +40,14 @@ func main(){
 	c.register("addfeed",middlewareLoggedIn(handlerAddfeed))
 	c.register("follow",middlewareLoggedIn(handlerFollow))
 	c.register("following",middlewareLoggedIn(handlerFollowing))
+	c.register("unfollow",middlewareLoggedIn(handlerUnfollow))
+	
 	input := os.Args
-	//if input[0] != "gator" {
-	//	fmt.Println("plz use gator <command> <args>")
-	//}
+
 	if len(input) < 2 {
 		fmt.Println("no command given")
 		os.Exit(1)
 	}
-	//if len(input) < 3 { // move if check into func itself already
-	//	fmt.Println("arg is required")
-	//	os.Exit(1) 
-	//}
-	//fmt.Println(len(input))
 	cmd := command{name: input[1],args: input[2:]}
 	err = c.run(s,cmd)
 	if err != nil {
