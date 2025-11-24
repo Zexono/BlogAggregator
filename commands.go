@@ -105,7 +105,7 @@ func handlerAgg(_ *state, cmd command) error{
 	return nil
 }
 
-func handlerAddfeed(s *state, cmd command) error{
+func handlerAddfeed(s *state, cmd command, user database.User) error{
 	if len(cmd.args) == 0{
 		return fmt.Errorf("command empty missing feed name and url")
 	}
@@ -116,12 +116,13 @@ func handlerAddfeed(s *state, cmd command) error{
 
 	name := cmd.args[0]
 	url := cmd.args[1]
-	user_cur := s.ptrconfig.CurrentUserName
 
-	user,err := s.db.GetUser(context.Background(),user_cur)
-	if err != nil {
-		return err
-	}
+	//user_cur := s.ptrconfig.CurrentUserName
+
+	//user,err := s.db.GetUser(context.Background(),user_cur)
+	//if err != nil {
+	//	return err
+	//}
 
 	userid := user.ID
 	
@@ -132,7 +133,7 @@ func handlerAddfeed(s *state, cmd command) error{
     UpdatedAt: time.Now().UTC(),
     Name:      name,
     Url:       url,
-    UserID:    userid,})
+    UserID:    userid})
 
 	if err != nil {
     	return err
@@ -180,19 +181,20 @@ func handlerFeeds(s *state, cmd command) error{
 	return nil
 }
 
-func handlerFollow(s *state, cmd command) error{
+func handlerFollow(s *state, cmd command, user database.User) error{
 	if len(cmd.args) == 0{
 		return fmt.Errorf("command empty missing feed url")
 	}
 
 	url := cmd.args[0]
 
-	user_cur := s.ptrconfig.CurrentUserName
-	user,err := s.db.GetUser(context.Background(),user_cur)
-	if err != nil {
-		println("user error")
-		return err
-	}
+	//user_cur := s.ptrconfig.CurrentUserName
+	//user,err := s.db.GetUser(context.Background(),user_cur)
+	//if err != nil {
+	//	println("user error")
+	//	return err
+	//}
+
 	feed_url ,err:= s.db.GetFeedFromURL(context.Background(),url)
 	if err != nil {
 		println("feed error")
@@ -220,16 +222,16 @@ func handlerFollow(s *state, cmd command) error{
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command) error{
+func handlerFollowing(s *state, cmd command, user database.User) error{
 	if len(cmd.args) != 0{
 		return fmt.Errorf("command do not need args")
 	}
 
-	user_cur := s.ptrconfig.CurrentUserName
-	user,err := s.db.GetUser(context.Background(),user_cur)
-	if err != nil {
-		return err
-	}
+	//user_cur := s.ptrconfig.CurrentUserName
+	//user,err := s.db.GetUser(context.Background(),user_cur)
+	//if err != nil {
+	//	return err
+	//}
 
 	userid := user.ID
 	feed,err := s.db.GetFeedFollowsForUser(context.Background(),userid)
@@ -243,7 +245,7 @@ func handlerFollowing(s *state, cmd command) error{
 		if err != nil {
     	return err
 		}
-		fmt.Printf("Feed: %+v By %s\n", feed_name.Name,user_cur)
+		fmt.Printf("Feed: %+v By %s\n", feed_name.Name,user.Name)
 	}
 	//fmt.Printf("Feed: %+v By %s\n", feed,user_cur)
 	
@@ -335,6 +337,22 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error){
 
 	
 	return &feed,nil
+}
+
+func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error{
+	
+	return func(s *state, cmd command) error {
+		user, err := s.db.GetUser(context.Background(), s.ptrconfig.CurrentUserName)
+		if err != nil {
+			return err
+		}
+		err = handler(s,cmd,user)
+		if err != nil {
+			return err
+		}
+		
+		return nil
+	}
 }
 
 

@@ -35,10 +35,11 @@ func main(){
 	c.register("reset",handlerReset)
 	c.register("users",handlerUsers)
 	c.register("agg",handlerAgg)
-	c.register("addfeed",handlerAddfeed)
 	c.register("feeds",handlerFeeds)
-	c.register("follow",handlerFollow)
-	c.register("following",handlerFollowing)
+
+	c.register("addfeed",middlewareLoggedIn(handlerAddfeed))
+	c.register("follow",middlewareLoggedIn(handlerFollow))
+	c.register("following",middlewareLoggedIn(handlerFollowing))
 	input := os.Args
 	//if input[0] != "gator" {
 	//	fmt.Println("plz use gator <command> <args>")
@@ -59,3 +60,4 @@ func main(){
 		os.Exit(1)
 	}
 }
+
