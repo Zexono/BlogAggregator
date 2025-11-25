@@ -12,7 +12,7 @@ import (
 )
 
 const getAllFeed = `-- name: GetAllFeed :many
-SELECT id, created_at, updated_at, name, url, user_id FROM feeds
+SELECT id, created_at, updated_at, name, url, user_id, last_fetched_at FROM feeds
 `
 
 func (q *Queries) GetAllFeed(ctx context.Context) ([]Feed, error) {
@@ -31,6 +31,7 @@ func (q *Queries) GetAllFeed(ctx context.Context) ([]Feed, error) {
 			&i.Name,
 			&i.Url,
 			&i.UserID,
+			&i.LastFetchedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -46,7 +47,7 @@ func (q *Queries) GetAllFeed(ctx context.Context) ([]Feed, error) {
 }
 
 const getFeedFromID = `-- name: GetFeedFromID :one
-SELECT id, created_at, updated_at, name, url, user_id FROM feeds WHERE id = $1
+SELECT id, created_at, updated_at, name, url, user_id, last_fetched_at FROM feeds WHERE id = $1
 `
 
 func (q *Queries) GetFeedFromID(ctx context.Context, id uuid.UUID) (Feed, error) {
@@ -59,12 +60,13 @@ func (q *Queries) GetFeedFromID(ctx context.Context, id uuid.UUID) (Feed, error)
 		&i.Name,
 		&i.Url,
 		&i.UserID,
+		&i.LastFetchedAt,
 	)
 	return i, err
 }
 
 const getFeedFromURL = `-- name: GetFeedFromURL :one
-SELECT id, created_at, updated_at, name, url, user_id FROM feeds WHERE url = $1
+SELECT id, created_at, updated_at, name, url, user_id, last_fetched_at FROM feeds WHERE url = $1
 `
 
 func (q *Queries) GetFeedFromURL(ctx context.Context, url string) (Feed, error) {
@@ -77,6 +79,7 @@ func (q *Queries) GetFeedFromURL(ctx context.Context, url string) (Feed, error) 
 		&i.Name,
 		&i.Url,
 		&i.UserID,
+		&i.LastFetchedAt,
 	)
 	return i, err
 }

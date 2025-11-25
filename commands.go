@@ -4,6 +4,7 @@ import (
 	"blogagg/internal/config"
 	"blogagg/internal/database"
 	"context"
+	"database/sql"
 	"encoding/xml"
 	"fmt"
 	"html"
@@ -91,18 +92,33 @@ func handlerUsers(s *state, cmd command) error{
 	return nil
 }
 
-func handlerAgg(_ *state, cmd command) error{
-	if len(cmd.args) != 0{
-		return fmt.Errorf("command do not need args")
+func handlerAgg(s *state, cmd command) error{
+	if len(cmd.args) <1{
+		return fmt.Errorf("command need time like 1s 1m 1h")
 	}
-	feed , err := fetchFeed(context.Background(),"https://www.wagslane.dev/index.xml")
+	time_between_reqs := cmd.args[0] 
+
+	timeBetweenRequests,err := time.ParseDuration(time_between_reqs)
 	if err != nil {
 		return err
 	}
-	fmt.Println(feed)
+	fmt.Printf("Collecting feeds every %s\n", timeBetweenRequests)
+	ticker := time.NewTicker(timeBetweenRequests)
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
+	}
+
+	//if len(cmd.args) != 0{
+	//	return fmt.Errorf("command do not need args")
+	//}
+	//feed , err := fetchFeed(context.Background(),"https://www.wagslane.dev/index.xml")
+	//if err != nil {
+	//	return err
+	//}
+	//fmt.Println(feed)
 
 
-	return nil
+	//return nil
 }
 
 func handlerAddfeed(s *state, cmd command, user database.User) error{
@@ -363,4 +379,32 @@ func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) 
 	}
 }
 
+func scrapeFeeds(s *state) error{
+	nextfeed ,err := s.db.GetNextFeedToFetch(context.Background())
+	if err != nil {
+		return err
+	}
+	err = s.db.MarkFeedFetched(context.Background(),database.MarkFeedFetchedParams{
+	LastFetchedAt: sql.NullTime{
+    Time:  time.Now().UTC(),
+    Valid: true},
+	UpdatedAt: time.Now().UTC(),ID: nextfeed.ID})
+	if err != nil {
+		return err
+	}
+
+	rssFeed, err := fetchFeed(context.Background(),nextfeed.Url)
+
+	if err != nil  {
+		return err
+	}
+	
+	for _, v := range rssFeed.Channel.Item {
+		fmt.Printf("Feed title: %s",v.Title)
+	}
+	
+
+	return nil
+
+}
 
