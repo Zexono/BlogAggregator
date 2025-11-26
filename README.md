@@ -10,10 +10,9 @@ Learning Goals
 
 you need Postgres and Go installed to run the program.
 
-Linux / WSL for Postgres 
 ```
-sudo apt update
-sudo apt install postgresql postgresql-contrib
+PostgreSQL: Required to store and retrieve data.
+Go: Version 1.24 or higher is required.
 ```
 Make sure you have Go installed 
 ```
@@ -33,6 +32,19 @@ Create a .gatorconfig.json
 ```
 
 # Command
+```
+	login
+	register
+	reset
+	users
+	agg
+	feeds
 
+	addfeed
+	follow
+	following
+	unfollow
+	browse
+```
 
 
