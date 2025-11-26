@@ -1,11 +1,12 @@
 package main
 
 import (
-	"blogagg/internal/config"
-	"blogagg/internal/database"
 	"database/sql"
 	"fmt"
 	"os"
+
+	"github.com/Zexono/blogagg/internal/config"
+	"github.com/Zexono/blogagg/internal/database"
 
 	_ "github.com/lib/pq"
 )
@@ -41,6 +42,7 @@ func main(){
 	c.register("follow",middlewareLoggedIn(handlerFollow))
 	c.register("following",middlewareLoggedIn(handlerFollowing))
 	c.register("unfollow",middlewareLoggedIn(handlerUnfollow))
+	c.register("browse",middlewareLoggedIn(handlerBrowse))
 	
 	input := os.Args
 

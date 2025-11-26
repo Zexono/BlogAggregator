@@ -1,4 +1,4 @@
-module blogagg
+module github.com/Zexono/blogagg
 
 go 1.25.1
 

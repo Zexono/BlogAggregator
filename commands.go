@@ -1,16 +1,20 @@
 package main
 
 import (
-	"blogagg/internal/config"
-	"blogagg/internal/database"
 	"context"
 	"database/sql"
 	"encoding/xml"
 	"fmt"
 	"html"
 	"io"
+	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
+
+	"github.com/Zexono/blogagg/internal/config"
+	"github.com/Zexono/blogagg/internal/database"
 
 	"github.com/google/uuid"
 )
@@ -379,10 +383,10 @@ func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) 
 	}
 }
 
-func scrapeFeeds(s *state) error{
+func scrapeFeeds(s *state) {
 	nextfeed ,err := s.db.GetNextFeedToFetch(context.Background())
 	if err != nil {
-		return err
+		log.Printf("Error occurred: %v\n", err)
 	}
 	err = s.db.MarkFeedFetched(context.Background(),database.MarkFeedFetchedParams{
 	LastFetchedAt: sql.NullTime{
@@ -390,20 +394,75 @@ func scrapeFeeds(s *state) error{
     Valid: true},
 	UpdatedAt: time.Now().UTC(),ID: nextfeed.ID})
 	if err != nil {
-		return err
+		log.Printf("Error occurred: %v\n", err)
 	}
 
 	rssFeed, err := fetchFeed(context.Background(),nextfeed.Url)
 
 	if err != nil  {
-		return err
+		log.Printf("Error occurred: %v\n", err)
 	}
 	
 	for _, v := range rssFeed.Channel.Item {
 		fmt.Printf("Feed title: %s",v.Title)
 	}
+	//layout := "2006-01-02 15:04:05"
+	for _, v := range rssFeed.Channel.Item {
+		pubDate,err := time.Parse(time.RFC1123Z,v.PubDate)
+		if err != nil  {
+			log.Printf("Error occurred: %v\n", err)
+		}
+		_,err = s.db.CreatePost(context.Background(),database.CreatePostParams{
+		ID: uuid.New(),
+		CreatedAt: time.Now().Local(),
+		UpdatedAt: time.Now().Local(),
+		Title: v.Title,
+		Url: v.Link,
+		Description: v.Description,
+		PublishedAt: pubDate,
+		FeedID: nextfeed.ID, 
+		})
+		if err != nil {
+			msg := err.Error() 
+			if strings.Contains(msg,"duplicate key value")  {
+				
+			}else{
+			log.Printf("Error occurred: %v\n", err)	
+			}
+			
+		}
+	}
+	
 	
 
+}
+
+func handlerBrowse(s *state, cmd command,user database.User) error{
+	var limit_show int32
+	if len(cmd.args) <1{
+		//return fmt.Errorf("command need time like 1s 1m 1h")
+		limit_show = 2
+	}else{
+		v, err := strconv.Atoi(cmd.args[0])
+
+		if err != nil {
+			fmt.Println("need to input number")
+			return err
+		}
+		limit_show = int32(v)
+	}
+	
+	post,err := s.db.GetPostForUser(context.Background(),database.GetPostForUserParams{
+		UserID: user.ID,
+		Limit: limit_show })
+	if err != nil {
+		return err
+	}
+
+	for _, v := range post {
+		fmt.Printf("post %v\n", v)
+	}
+	
 	return nil
 
 }
